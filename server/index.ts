@@ -40,6 +40,8 @@ webserver.all(/\/((?!\/api\/webhooks).)*/, (req, res, next) => {
   const parsedUrl = parse(req.url, true);
   const { pathname } = parsedUrl;
 
+  console.log(pathname);
+
   if (pathname === webhook_uri) {
     next();
   } else {
