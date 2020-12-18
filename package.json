@@ -7,16 +7,18 @@
     "start": "cross-env NODE_ENV=production node dist/index.js"
   },
   "dependencies": {
+    "body-parser": "^1.19.0",
     "botbuilder-adapter-slack": "^1.0.13",
     "botkit": "^4.10.0",
     "cross-env": "^7.0.2",
     "dotenv": "^8.2.0",
+    "express": "^4.17.1",
     "next": "latest",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
   "devDependencies": {
-    "@types/node": "^12.0.12",
+    "@types/express": "^4.17.9",
     "@types/react": "^16.9.44",
     "@types/react-dom": "^16.9.8",
     "nodemon": "^2.0.4",
