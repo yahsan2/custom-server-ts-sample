@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-import { createServer, IncomingMessage, ServerResponse } from "http";
+import { createServer } from "http";
 import express from "express";
 import bodyParser from "body-parser";
 import next from "next";
@@ -17,16 +17,6 @@ const webserver = express();
 webserver.set("port", port);
 webserver.use(bodyParser.json());
 
-webserver.post("/api/webhooks", (req, res) => {
-  adapter.processActivity(req, res, async (context) => {
-    await context.sendActivity("I heard a message!");
-  });
-});
-
-webserver.all("*", (req, res) => {
-  return handle(req, res);
-});
-
 const adapter = new SlackAdapter({
   // clientSigningSecret: process.env.SLACK_SIGNSIN_SECRET,
   // clientId: process.env.SLACK_CLIENT_ID, // oauth client id
@@ -42,14 +32,21 @@ const adapter = new SlackAdapter({
 
 adapter.use(new SlackEventMiddleware());
 
-const controller = new Botkit({
-  webserver,
-  webhook_uri: "/api/webhooks",
-  adapter: adapter,
+webserver.all("*", (req, res) => {
+  return handle(req, res);
 });
 
-controller.webserver.all("*", (req: IncomingMessage, res: ServerResponse) => {
-  return handle(req, res);
+webserver.post("/api/webhooks", (req, res) => {
+  adapter.processActivity(req, res, async (context) => {
+    await context.sendActivity("I heard a message!");
+  });
+});
+
+const controller = new Botkit({
+  webserver,
+  // disable_webserver: true,
+  webhook_uri: "/api/webhooks",
+  adapter: adapter,
 });
 
 controller.on("message", async (_bot, message) => {
@@ -74,8 +71,8 @@ controller.on(["channel_created"], async (bot, message) => {
 // controller.on("app_mention", async (bot, message) => {
 //   await bot.reply(message, `I received an app_mention event! ${message}`);
 // });
-
-app.prepare().then(() => {
+(async () => {
+  await app.prepare();
   createServer(controller.webserver).listen(port, function () {
     console.log(
       `> Server listening at http://localhost:${port} as ${
@@ -83,4 +80,4 @@ app.prepare().then(() => {
       }`
     );
   });
-});
+})();
