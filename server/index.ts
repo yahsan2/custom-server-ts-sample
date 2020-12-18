@@ -1,6 +1,8 @@
 require("dotenv").config();
 
 import { createServer } from "http";
+import { parse } from "url";
+
 import express from "express";
 import bodyParser from "body-parser";
 import next from "next";
@@ -12,6 +14,8 @@ const port = parseInt(process.env.PORT || "3001", 10);
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
+
+const webhook_uri = "/api/webhooks";
 
 const webserver = express();
 webserver.set("port", port);
@@ -32,20 +36,20 @@ const adapter = new SlackAdapter({
 
 adapter.use(new SlackEventMiddleware());
 
-webserver.all("*", (req, res) => {
-  return handle(req, res);
-});
+webserver.all(/\/((?!\/api\/webhooks).)*/, (req, res, next) => {
+  const parsedUrl = parse(req.url, true);
+  const { pathname } = parsedUrl;
 
-webserver.post("/api/webhooks", (req, res) => {
-  adapter.processActivity(req, res, async (context) => {
-    await context.sendActivity("I heard a message!");
-  });
+  if (pathname === webhook_uri) {
+    next();
+  } else {
+    return handle(req, res);
+  }
 });
 
 const controller = new Botkit({
   webserver,
-  // disable_webserver: true,
-  webhook_uri: "/api/webhooks",
+  webhook_uri,
   adapter: adapter,
 });
 
